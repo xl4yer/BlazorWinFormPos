@@ -10,7 +10,7 @@ namespace Pos
 
             // Set the form to fullscreen and remove the window buttons
             this.WindowState = FormWindowState.Normal;
-            //this.FormBorderStyle = FormBorderStyle.None;
+            this.FormBorderStyle = FormBorderStyle.Fixed3D;
             this.StartPosition = FormStartPosition.CenterScreen;
 
             // Create and configure the BlazorWebView
