@@ -1,0 +1,114 @@
+﻿@page "/dashboard"
+@inject NavigationManager Nav
+@inject ILocalStorageService Loc
+@using System.Net.Http.Headers
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="row">
+    <div class="col-12 col-md-6">
+
+        <MudCard Class="dashboard-card" Style="background-color:#30BFC1">
+            <MudCardContent>
+                <MudText Class="dashboard-title" Size="5">
+                    Today's Sales
+                </MudText>
+                <MudCardContent>
+                    <MudText Style="font-size:30px; font-weight:bold">₱@todaySales</MudText>
+                </MudCardContent>
+            </MudCardContent>
+        </MudCard>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <MudCard Class="dashboard-card" Style="background-color:#FEAD46">
+            <MudCardContent>
+                <MudText Class="dashboard-title" Size="5">
+                    Monthly Sales
+                </MudText>
+                <MudCardContent>
+                    <MudText Style="font-size:30px; font-weight:bold">₱@monthSales</MudText>
+                </MudCardContent>
+            </MudCardContent>
+        </MudCard>
+    </div>
+</div>
+<br />
+
+<div>
+    <MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="Index" XAxisLabels="@XAxisLabels" Width="100%" Height="600px" ChartOptions="@Options" />
+</div>
+
+
+@code {
+    public ChartOptions Options = new ChartOptions();
+    public double todaySales { get; set; } = 0;
+    public double monthSales { get; set; } = 0;
+    public double monthlySales { get; set; } = 0;
+    private purchase[]? p;
+    private int Index = -1;
+    public List<ChartSeries> Series = new List<ChartSeries>();
+    public string[] XAxisLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+    public async Task GetTodaySales()
+    {
+        using (HttpClient client = new HttpClient())
+        {
+            client.BaseAddress = new Uri($"https://localhost:7184/");
+            HttpResponseMessage response = await client.GetAsync($"api/Purchase/GetTodaySales");
+            if (response.IsSuccessStatusCode)
+            {
+                string contentResponse = await response.Content.ReadAsStringAsync();
+                todaySales = JsonConvert.DeserializeObject<double>(contentResponse);
+                StateHasChanged();
+            }
+        }
+    }
+
+    public async Task GetMonthlySales()
+    {
+        using (HttpClient client = new HttpClient())
+        {
+            client.BaseAddress = new Uri($"https://localhost:7184/");
+            HttpResponseMessage response = await client.GetAsync($"api/Purchase/GetMonthlySales");
+            if (response.IsSuccessStatusCode)
+            {
+                string contentResponse = await response.Content.ReadAsStringAsync();
+                var salesData = JsonConvert.DeserializeObject<purchase[]>(contentResponse);
+                var monthlySales = salesData.Select(x => x.total_sales).ToArray();
+                Series = new List<ChartSeries>
+            {
+                new ChartSeries
+                {
+                    Name = "Monthly Sales",
+                    Data = monthlySales
+                }
+            };
+                StateHasChanged();
+            }
+        }
+    }
+
+    public async Task GetMonthSales()
+    {
+        using (HttpClient client = new HttpClient())
+        {
+            client.BaseAddress = new Uri($"https://localhost:7184/");
+            HttpResponseMessage response = await client.GetAsync($"api/Purchase/GetMonthSales");
+            if (response.IsSuccessStatusCode)
+            {
+                string contentResponse = await response.Content.ReadAsStringAsync();
+                monthSales = JsonConvert.DeserializeObject<double>(contentResponse);
+                StateHasChanged();
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTodaySales();
+        await GetMonthSales();
+        await GetMonthlySales();
+        StateHasChanged();
+    }
+}
